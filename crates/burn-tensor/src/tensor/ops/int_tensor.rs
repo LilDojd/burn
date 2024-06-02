@@ -747,6 +747,15 @@ pub trait IntTensorOps<B: Backend> {
         Self::int_add_scalar(Self::int_zeros(shape, device), fill_value)
     }
 
+    fn int_diagonal<const D1: usize, const D2: usize>(
+        tensor: IntTensor<B, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> IntTensor<B, D2> {
+        todo!()
+    }
+
     /// Sums all elements in the tensor.
     ///
     /// # Arguments

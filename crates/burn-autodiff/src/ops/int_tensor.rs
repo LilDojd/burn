@@ -153,6 +153,15 @@ impl<B: Backend, C: CheckpointStrategy> IntTensorOps<Self> for Autodiff<B, C> {
         B::int_full(shape, fill_value, device)
     }
 
+    fn int_diagonal<const D1: usize, const D2: usize>(
+        tensor: IntTensor<B, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> IntTensor<B, D2> {
+        B::int_diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn int_sum<const D: usize>(tensor: IntTensor<B, D>) -> IntTensor<B, 1> {
         B::int_sum(tensor)
     }

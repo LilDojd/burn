@@ -791,6 +791,71 @@ impl<B: Backend, C: CheckpointStrategy> FloatTensorOps<Self> for Autodiff<B, C> 
         }
     }
 
+    fn float_diagonal<const D1: usize, const D2: usize>(
+        tensor: FloatTensor<Self, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> FloatTensor<Self, D2> {
+        #[derive(Debug)]
+        struct DiagonalDim<const D1: usize, const D2: usize>;
+
+        #[derive(new, Debug)]
+        struct RetroDiagonal<B: Backend, const D1: usize, const D2: usize> {
+            input_id: NodeID,
+            offset: i64,
+            dim1: usize,
+            dim2: usize,
+            _backend: PhantomData<B>,
+        }
+
+        impl<B: Backend, const D1: usize, const D2: usize> RetroForward for RetroDiagonal<B, D1, D2> {
+            fn forward(&self, states: &mut BackwardStates, out_node: NodeID) {
+                let input = states.get_state::<B::FloatTensorPrimitive<D1>>(&self.input_id);
+                let out = B::float_diagonal(input, self.offset, self.dim1, self.dim2);
+                states.save(out_node, out)
+            }
+        }
+
+        impl<B: Backend, const D1: usize, const D2: usize> Backward<B, D2, 1> for DiagonalDim<D1, D2> {
+            type State = (i64, usize, usize);
+
+            fn backward(
+                self,
+                ops: Ops<Self::State, 1>,
+                grads: &mut Gradients,
+                _checkpointer: &mut Checkpointer,
+            ) {
+                let (offset, dim1, dim2) = ops.state;
+
+                unary::<B, D2, D1, _>(ops.parents, ops.node, grads, |grad| {
+                    B::float_diagonal(grad, offset, dim2, dim1)
+                });
+            }
+        }
+
+        match DiagonalDim::<D1, D2>
+            .prepare::<C>([tensor.node.clone()])
+            .memory_bound()
+            .retro_forward(RetroDiagonal::<B, D1, D2>::new(
+                tensor.node.id,
+                offset,
+                dim1,
+                dim2,
+            ))
+            .parents([&tensor])
+            .stateful()
+        {
+            OpsKind::Tracked(prep) => prep.finish(
+                (offset, dim1, dim2),
+                B::float_diagonal(tensor.primitive, offset, dim1, dim2),
+            ),
+            OpsKind::UnTracked(prep) => {
+                prep.finish(B::float_diagonal(tensor.primitive, offset, dim1, dim2))
+            }
+        }
+    }
+
     fn float_reshape<const D1: usize, const D2: usize>(
         tensor: FloatTensor<Self, D1>,
         shape: Shape<D2>,

@@ -231,6 +231,40 @@ impl TensorCheck {
         check
     }
 
+    pub(crate) fn diagonal<const D: usize>(dim1: usize, dim2: usize) -> Self {
+        let mut check = Self::Ok;
+
+        if D < 2 {
+            check = check.register(
+                "Diagonal",
+                TensorError::new(format!(
+                    "The input tensor must have at least 2 dimensions, got {D}"
+                )),
+            );
+        }
+
+        if dim1 >= D || dim2 >= D {
+            let dm = D - 1;
+            check = check.register(
+                "Diagonal",
+                TensorError::new(format!(
+                    "Dimensions out of range (expected to be in range [0, {dm}], but got {dim1}, {dim2})"
+                )),
+            );
+        }
+
+        if dim1 == dim2 {
+            check = check.register(
+                "Diagonal",
+                TensorError::new(format!(
+                    "The two diagonal dimensions cannot be identical {dim1}, {dim2}."
+                )),
+            );
+        }
+
+        check
+    }
+
     pub(crate) fn squeeze<const D2: usize>(dim: usize, tensor_dims: &[usize]) -> Self {
         let mut check = Self::Ok;
         // This should actually be to check that the dimension to squeeze

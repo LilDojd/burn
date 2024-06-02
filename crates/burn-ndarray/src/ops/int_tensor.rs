@@ -275,6 +275,15 @@ impl<E: FloatNdArrayElement> IntTensorOps<Self> for NdArray<E> {
         Self::int_from_data(Data::full(shape, fill_value), device)
     }
 
+    fn int_diagonal<const D1: usize, const D2: usize>(
+        tensor: NdArrayTensor<i64, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> NdArrayTensor<i64, D2> {
+        NdArrayMathOps::diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn int_sum<const D: usize>(tensor: NdArrayTensor<i64, D>) -> NdArrayTensor<i64, 1> {
         NdArrayMathOps::sum(tensor)
     }

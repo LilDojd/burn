@@ -819,6 +819,15 @@ pub trait FloatTensorOps<B: Backend> {
         false
     }
 
+    fn float_diagonal<const D1: usize, const D2: usize>(
+        tensor: FloatTensor<B, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> FloatTensor<B, D2> {
+        todo!()
+    }
+
     /// Sum of all elements in a tensor.
     ///
     /// # Arguments
