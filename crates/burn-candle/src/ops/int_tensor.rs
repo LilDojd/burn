@@ -48,6 +48,15 @@ impl<F: FloatCandleElement, I: IntCandleElement> IntTensorOps<Self> for Candle<F
         super::base::reshape(tensor, shape)
     }
 
+    fn int_diagonal<const D1: usize, const D2: usize>(
+        tensor: IntTensor<Self, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> IntTensor<Self, D2> {
+        super::base::diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn int_slice<const D1: usize, const D2: usize>(
         tensor: IntTensor<Self, D1>,
         indices: [std::ops::Range<usize>; D2],

@@ -1,6 +1,7 @@
-use std::marker::PhantomData;
+use std::{borrow::Borrow, marker::PhantomData, sync::Arc};
 
 use burn_tensor::{backend::Backend, Data, Reader, Shape};
+use candle_core::IndexOp;
 
 use crate::{
     element::{CandleElement, FloatCandleElement, IntCandleElement},
@@ -28,6 +29,83 @@ pub fn into_data<E: CandleElement, const D: usize>(tensor: CandleTensor<E, D>) -
         tensor.tensor.flatten_all().unwrap().to_vec1().unwrap(),
         tensor.shape(),
     )
+}
+
+pub fn diagonal<E: CandleElement, const D1: usize, const D2: usize>(
+    tensor: CandleTensor<E, D1>,
+    offset: i64,
+    dim1: usize,
+    dim2: usize,
+) -> CandleTensor<E, D2> {
+    // FIXME: Replace with an appropriate method when Candle provides one.
+    let tensor = tensor.tensor;
+    let shape = tensor.dims();
+
+    fn get_dim_size(tensor: &candle_core::Tensor, dim: usize) -> i64 {
+        tensor
+            .dim(dim)
+            .unwrap_or_else(|err| panic!("Requested dimension '{:?}' not found: {}", dim, err))
+            as i64
+    }
+
+    let dim1_size = get_dim_size(&tensor, dim1);
+    let dim2_size = get_dim_size(&tensor, dim2);
+
+    let diag_size: usize = if offset >= 0 {
+        i64::min(dim1_size, dim2_size - offset)
+    } else {
+        i64::min(dim1_size + offset, dim2_size)
+    }
+    .try_into()
+    .unwrap_or(0);
+
+    // 1. Permute dim1 and dim2 to the start
+    let perm_indices = core::iter::once(dim1)
+        .chain(core::iter::once(dim2))
+        .chain((0..shape.len()).filter(|&i| i != dim1 && i != dim2))
+        .collect::<Vec<usize>>();
+
+    let tensor = tensor.permute(perm_indices.as_slice()).unwrap();
+
+    // 1.5. Get shape of output tensor
+    let sizes = shape
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| *i != dim1 && *i != dim2)
+        .map(|(_, &s)| s)
+        .chain(core::iter::once(diag_size))
+        .collect::<Vec<_>>();
+
+    // 2. Get diagonal indices
+    let i = (0..diag_size);
+    let j = (offset.unsigned_abs() as usize..diag_size + offset.unsigned_abs() as usize);
+
+    // 3. Get diagonals
+    let mut diags = Vec::new();
+    for (i, j) in i.into_iter().zip(j.into_iter()) {
+        // This is why we permuted
+        let index = match offset >= 0 {
+            true => (j, i),
+            false => (i, j),
+        };
+        let diag = tensor
+            .i(index)
+            .expect("Candle index error")
+            .flatten_all()
+            .unwrap()
+            .reshape(((), 1))
+            .unwrap();
+
+        diags.push(diag);
+    }
+
+    let new_tensor = candle_core::Tensor::cat(diags.as_slice(), 1)
+        .unwrap()
+        .reshape(sizes)
+        .unwrap()
+        .to_owned();
+
+    CandleTensor::new(new_tensor)
 }
 
 pub fn to_device<E: CandleElement, const D: usize>(

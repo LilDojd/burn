@@ -67,6 +67,15 @@ impl<F: FloatCandleElement, I: IntCandleElement> FloatTensorOps<Self> for Candle
         super::base::device(tensor)
     }
 
+    fn float_diagonal<const D1: usize, const D2: usize>(
+        tensor: CandleTensor<F, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> CandleTensor<F, D2> {
+        super::base::diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn float_to_device<const D: usize>(
         tensor: CandleTensor<F, D>,
         device: &Device<Self>,
