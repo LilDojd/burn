@@ -129,6 +129,15 @@ pub trait BoolTensorOps<B: Backend> {
         shape: Shape<D2>,
     ) -> BoolTensor<B, D2>;
 
+    fn bool_diagonal<const D1: usize, const D2: usize>(
+        tensor: BoolTensor<B, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> BoolTensor<B, D2> {
+        todo!()
+    }
+
     /// Gets the values from the tensor for the given ranges.
     ///
     /// # Arguments

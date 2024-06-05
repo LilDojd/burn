@@ -43,6 +43,22 @@ where
     }
 }
 
+macro_rules! impl_diagonal {
+    ($($D:expr),*) => {
+        $(
+            impl<B, K> Diagonal<B, { $D - 1 }, K> for Tensor<B, $D, K>
+            where
+                B: Backend,
+                K: BasicOps<B>,
+            {
+                fn diagonal(self, offset: i64, dim1: usize, dim2: usize) -> Tensor<B, { $D - 1 }, K> {
+                    Tensor::new(K::diagonal::<$D, { $D - 1 }>(self.primitive, offset, dim1, dim2))
+                }
+            }
+        )*
+    }
+}
+
 impl<B, const D: usize, K> Tensor<B, D, K>
 where
     B: Backend,
@@ -112,6 +128,16 @@ where
         // Convert reshape args to shape
         let shape = shape.into_shape(&self);
         Tensor::new(K::reshape::<D, D2>(self.primitive, shape))
+    }
+
+    pub fn diagonal<const D2: usize>(
+        self,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> Tensor<B, D2, K> {
+        check!(TensorCheck::diagonal::<{ D }, { D2 }>(dim1, dim2));
+        Tensor::new(K::diagonal(self.primitive, offset, dim1, dim2))
     }
 
     /// Transpose the tensor.
@@ -1226,6 +1252,28 @@ pub trait BasicOps<B: Backend>: TensorKind<B> {
         shape: Shape<D2>,
     ) -> Self::Primitive<D2>;
 
+    /// Returns the diagonal elements of the current tensor with respect to `dim1` and `dim2`.
+    ///
+    /// # Arguments
+    /// - `offset`: The offset of the diagonal. if `offset` = 0, it is the main diagonal.
+    /// - `dim1`: The first dimension with respect to which to take diagonal.
+    /// - `dim2`: The second dimension with respect to which to take diagonal.
+    ///
+    /// # Panics
+    /// - If the tensor is a 1D tensor.
+    /// - If `dim1` or `dim2` is greater than the number of dimensions of the tensor.
+    /// - If `dim1` is equal to `dim2`.
+    ///
+    /// # Returns
+    ///
+    /// A new tensor containing the diagonal elements.
+    fn diagonal<const D1: usize, const D2: usize>(
+        tensor: Self::Primitive<D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> Self::Primitive<D2>;
+
     /// Transposes a tensor.
     ///
     /// # Arguments
@@ -1625,6 +1673,15 @@ impl<B: Backend> BasicOps<B> for Float {
         B::float_reshape(tensor, shape)
     }
 
+    fn diagonal<const D1: usize, const D2: usize>(
+        tensor: Self::Primitive<D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> Self::Primitive<D2> {
+        B::float_diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn transpose<const D: usize>(tensor: Self::Primitive<D>) -> Self::Primitive<D> {
         B::float_transpose(tensor)
     }
@@ -1750,6 +1807,15 @@ impl<B: Backend> BasicOps<B> for Int {
         B::int_reshape(tensor, shape)
     }
 
+    fn diagonal<const D1: usize, const D2: usize>(
+        tensor: Self::Primitive<D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> Self::Primitive<D2> {
+        B::int_diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn transpose<const D: usize>(tensor: Self::Primitive<D>) -> Self::Primitive<D> {
         B::int_transpose(tensor)
     }
@@ -1873,6 +1939,15 @@ impl<B: Backend> BasicOps<B> for Bool {
         shape: Shape<D2>,
     ) -> Self::Primitive<D2> {
         B::bool_reshape(tensor, shape)
+    }
+
+    fn diagonal<const D1: usize, const D2: usize>(
+        tensor: Self::Primitive<D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> Self::Primitive<D2> {
+        B::bool_diagonal(tensor, offset, dim1, dim2)
     }
 
     fn transpose<const D: usize>(tensor: Self::Primitive<D>) -> Self::Primitive<D> {

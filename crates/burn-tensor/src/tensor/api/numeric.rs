@@ -118,27 +118,6 @@ where
         Self::new(K::full(shape.into(), fill_value, device))
     }
 
-    /// Returns the diagonal elements of the current tensor with respect to `dim1` and `dim2`.
-    ///
-    /// # Arguments
-    /// - `offset`: The offset of the diagonal. if `offset` = 0, it is the main diagonal.
-    /// - `dim1`: The first dimension with respect to which to take diagonal.
-    /// - `dim2`: The second dimension with respect to which to take diagonal.
-    ///
-    /// # Panics
-    /// - If the tensor is a 1D tensor.
-    /// - If `dim1` or `dim2` is greater than the number of dimensions of the tensor.
-    /// - If `dim1` is equal to `dim2`.
-    ///
-    /// # Returns
-    ///
-    /// A new tensor containing the diagonal elements.
-    pub fn diagonal(self, offset: i64, dim1: usize, dim2: usize) -> Tensor<B, 1, K> {
-        check!(TensorCheck::diagonal::<{ D }>(dim1, dim2));
-
-        Tensor::new(K::diagonal(self.primitive, offset, dim1, dim2))
-    }
-
     /// Aggregate all elements in the tensor with the mean operation.
     pub fn mean(self) -> Tensor<B, 1, K> {
         Tensor::new(K::mean(self.primitive))
@@ -1152,13 +1131,6 @@ where
         fill_value: E,
         device: &B::Device,
     ) -> Self::Primitive<D>;
-
-    fn diagonal<const D1: usize, const D2: usize>(
-        tensor: Self::Primitive<D1>,
-        offset: i64,
-        dim1: usize,
-        dim2: usize,
-    ) -> Self::Primitive<D2>;
 
     /// Sums all the elements of the tensor.
     ///
@@ -2196,15 +2168,6 @@ impl<B: Backend> Numeric<B> for Int {
         B::int_full(shape, fill_value.elem(), device)
     }
 
-    fn diagonal<const D1: usize, const D2: usize>(
-        tensor: Self::Primitive<D1>,
-        offset: i64,
-        dim1: usize,
-        dim2: usize,
-    ) -> Self::Primitive<D2> {
-        B::int_diagonal(tensor, offset, dim1, dim2)
-    }
-
     fn sum<const D: usize>(tensor: Self::Primitive<D>) -> Self::Primitive<1> {
         B::int_sum(tensor)
     }
@@ -2548,15 +2511,6 @@ impl<B: Backend> Numeric<B> for Float {
         device: &B::Device,
     ) -> Self::Primitive<D> {
         B::float_full(shape, fill_value.elem(), device)
-    }
-
-    fn diagonal<const D1: usize, const D2: usize>(
-        tensor: Self::Primitive<D1>,
-        offset: i64,
-        dim1: usize,
-        dim2: usize,
-    ) -> Self::Primitive<D2> {
-        B::float_diagonal(tensor, offset, dim1, dim2)
     }
 
     fn sum<const D: usize>(tensor: Self::Primitive<D>) -> Self::Primitive<1> {

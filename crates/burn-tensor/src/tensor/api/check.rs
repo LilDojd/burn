@@ -231,24 +231,33 @@ impl TensorCheck {
         check
     }
 
-    pub(crate) fn diagonal<const D: usize>(dim1: usize, dim2: usize) -> Self {
+    pub(crate) fn diagonal<const D1: usize, const D2: usize>(dim1: usize, dim2: usize) -> Self {
         let mut check = Self::Ok;
 
-        if D < 2 {
+        if D1 < 2 {
             check = check.register(
                 "Diagonal",
                 TensorError::new(format!(
-                    "The input tensor must have at least 2 dimensions, got {D}"
+                    "The input tensor must have at least 2 dimensions, got {D1}"
                 )),
             );
         }
 
-        if dim1 >= D || dim2 >= D {
-            let dm = D - 1;
+        if D1 - D2 != 1 {
             check = check.register(
                 "Diagonal",
                 TensorError::new(format!(
-                    "Dimensions out of range (expected to be in range [0, {dm}], but got {dim1}, {dim2})"
+                    "The output tensor must have exactly one less dimension than the input tensor \
+                     (D1={D1}, D2={D2})"
+                )),
+            );
+        }
+
+        if dim1 >= D1 || dim2 >= D1 {
+            check = check.register(
+                "Diagonal",
+                TensorError::new(format!(
+                    "Dimensions out of range (expected to be in range [0, {D2}], but got {dim1}, {dim2})"
                 )),
             );
         }
