@@ -182,6 +182,15 @@ impl<E: TchElement> FloatTensorOps<Self> for LibTorch<E> {
         TchOps::swap_dims(tensor, dim1, dim2)
     }
 
+    fn float_diagonal<const D1: usize, const D2: usize>(
+        tensor: TchTensor<E, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> TchTensor<E, D2> {
+        TchOps::diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn float_reshape<const D1: usize, const D2: usize>(
         tensor: TchTensor<E, D1>,
         shape: Shape<D2>,

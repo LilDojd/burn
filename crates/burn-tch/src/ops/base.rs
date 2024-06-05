@@ -33,6 +33,17 @@ impl<E: tch::kind::Element + Copy + Default> TchOps<E> {
         TchTensor::from_existing(tensor.tensor.reshape(shape_tch.dims), tensor.storage)
     }
 
+    pub fn diagonal<const D1: usize, const D2: usize>(
+        tensor: TchTensor<E, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> TchTensor<E, D2> {
+        let tensor = tensor.tensor.diagonal(offset, dim1 as i64, dim2 as i64);
+
+        TchTensor::new(tensor)
+    }
+
     pub fn repeat<const D: usize>(
         tensor: TchTensor<E, D>,
         dim: usize,

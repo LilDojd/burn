@@ -48,6 +48,15 @@ impl<E: TchElement> IntTensorOps<Self> for LibTorch<E> {
         TchOps::reshape(tensor, shape)
     }
 
+    fn int_diagonal<const D1: usize, const D2: usize>(
+        tensor: TchTensor<i64, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> TchTensor<i64, D2> {
+        TchOps::diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn int_device<const D: usize>(tensor: &TchTensor<i64, D>) -> LibTorchDevice {
         tensor.tensor.device().into()
     }
