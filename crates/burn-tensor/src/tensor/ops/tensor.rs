@@ -824,9 +824,7 @@ pub trait FloatTensorOps<B: Backend> {
         offset: i64,
         dim1: usize,
         dim2: usize,
-    ) -> FloatTensor<B, D2> {
-        todo!()
-    }
+    ) -> FloatTensor<B, D2>;
 
     /// Sum of all elements in a tensor.
     ///

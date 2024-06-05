@@ -752,9 +752,7 @@ pub trait IntTensorOps<B: Backend> {
         offset: i64,
         dim1: usize,
         dim2: usize,
-    ) -> IntTensor<B, D2> {
-        todo!()
-    }
+    ) -> IntTensor<B, D2>;
 
     /// Sums all elements in the tensor.
     ///

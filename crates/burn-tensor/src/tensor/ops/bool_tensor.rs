@@ -134,9 +134,7 @@ pub trait BoolTensorOps<B: Backend> {
         offset: i64,
         dim1: usize,
         dim2: usize,
-    ) -> BoolTensor<B, D2> {
-        todo!()
-    }
+    ) -> BoolTensor<B, D2>;
 
     /// Gets the values from the tensor for the given ranges.
     ///
