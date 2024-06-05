@@ -326,7 +326,7 @@ impl<E: FloatNdArrayElement> FloatTensorOps<Self> for NdArray<E> {
         dim1: usize,
         dim2: usize,
     ) -> NdArrayTensor<E, D2> {
-        NdArrayMathOps::diagonal(tensor, offset, dim1, dim2)
+        NdArrayOps::diagonal(tensor, offset, dim1, dim2)
     }
 
     fn float_sum<const D: usize>(tensor: NdArrayTensor<E, D>) -> NdArrayTensor<E, 1> {

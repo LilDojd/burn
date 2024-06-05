@@ -68,6 +68,75 @@ where
         )
     }
 
+    pub fn diagonal<const D1: usize, const D2: usize>(
+        tensor: NdArrayTensor<E, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> NdArrayTensor<E, D2> {
+        let arr = tensor.array;
+        let num_dims = arr.ndim();
+
+        let storage_offset = arr.strides().iter().zip(arr.shape()).enumerate().fold(
+            0,
+            |acc, (i, (&stride, &shape))| {
+                if i < arr.ndim() - num_dims {
+                    acc + stride * shape as isize
+                } else {
+                    acc
+                }
+            },
+        );
+
+        let diag_size: usize = {
+            if offset >= 0 {
+                i64::min(arr.shape()[dim1] as i64, arr.shape()[dim2] as i64 - offset)
+                    .try_into()
+                    .unwrap_or(0)
+            } else {
+                i64::min(arr.shape()[dim1] as i64 + offset, arr.shape()[dim2] as i64)
+                    .try_into()
+                    .unwrap_or(0)
+            }
+        };
+
+        let mut storage_offset = storage_offset;
+        if diag_size > 0 {
+            if offset >= 0 {
+                storage_offset += offset as isize * arr.strides()[dim2];
+            } else {
+                storage_offset -= offset as isize * arr.strides()[dim1];
+            }
+        }
+
+        let sizes = arr
+            .shape()
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| *i != dim1 && *i != dim2)
+            .map(|(_, &s)| s)
+            .chain(core::iter::once(diag_size))
+            .collect::<Vec<_>>();
+
+        let strides = arr
+            .strides()
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| *i != dim1 && *i != dim2)
+            .map(|(_, &s)| s)
+            .chain(core::iter::once(arr.strides()[dim1] + arr.strides()[dim2]))
+            .map(|s| s.try_into().unwrap())
+            .collect::<Vec<_>>();
+
+        let array_view = unsafe {
+            ArrayView::from_shape_ptr(sizes.strides(strides), arr.as_ptr().offset(storage_offset))
+        };
+
+        NdArrayTensor {
+            array: array_view.to_owned().into_shared(),
+        }
+    }
+
     pub fn cat<const D: usize>(
         tensors: Vec<NdArrayTensor<E, D>>,
         dim: usize,
@@ -253,75 +322,6 @@ where
     pub fn mean<const D: usize>(tensor: NdArrayTensor<E, D>) -> NdArrayTensor<E, 1> {
         let data = Data::from([tensor.array.mean().unwrap()]);
         NdArrayTensor::from_data(data)
-    }
-
-    pub fn diagonal<const D1: usize, const D2: usize>(
-        tensor: NdArrayTensor<E, D1>,
-        offset: i64,
-        dim1: usize,
-        dim2: usize,
-    ) -> NdArrayTensor<E, D2> {
-        let arr = tensor.array;
-        let num_dims = arr.ndim();
-
-        let storage_offset = arr.strides().iter().zip(arr.shape()).enumerate().fold(
-            0,
-            |acc, (i, (&stride, &shape))| {
-                if i < arr.ndim() - num_dims {
-                    acc + stride * shape as isize
-                } else {
-                    acc
-                }
-            },
-        );
-
-        let diag_size: usize = {
-            if offset >= 0 {
-                i64::min(arr.shape()[dim1] as i64, arr.shape()[dim2] as i64 - offset)
-                    .try_into()
-                    .unwrap_or(0)
-            } else {
-                i64::min(arr.shape()[dim1] as i64 + offset, arr.shape()[dim2] as i64)
-                    .try_into()
-                    .unwrap_or(0)
-            }
-        };
-
-        let mut storage_offset = storage_offset;
-        if diag_size > 0 {
-            if offset >= 0 {
-                storage_offset += offset as isize * arr.strides()[dim2];
-            } else {
-                storage_offset -= offset as isize * arr.strides()[dim1];
-            }
-        }
-
-        let sizes = arr
-            .shape()
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| *i != dim1 && *i != dim2)
-            .map(|(_, &s)| s)
-            .chain(core::iter::once(diag_size))
-            .collect::<Vec<_>>();
-
-        let strides = arr
-            .strides()
-            .iter()
-            .enumerate()
-            .filter(|(i, _)| *i != dim1 && *i != dim2)
-            .map(|(_, &s)| s)
-            .chain(core::iter::once(arr.strides()[dim1] + arr.strides()[dim2]))
-            .map(|s| s.try_into().unwrap())
-            .collect::<Vec<_>>();
-
-        let array_view = unsafe {
-            ArrayView::from_shape_ptr(sizes.strides(strides), arr.as_ptr().offset(storage_offset))
-        };
-
-        NdArrayTensor {
-            array: array_view.to_owned().into_shared(),
-        }
     }
 
     pub fn sum<const D: usize>(tensor: NdArrayTensor<E, D>) -> NdArrayTensor<E, 1> {

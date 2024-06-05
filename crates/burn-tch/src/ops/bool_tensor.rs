@@ -45,6 +45,15 @@ impl<E: TchElement> BoolTensorOps<Self> for LibTorch<E> {
         TchOps::reshape(tensor, shape)
     }
 
+    fn bool_diagonal<const D1: usize, const D2: usize>(
+        tensor: TchTensor<bool, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> TchTensor<bool, D2> {
+        TchOps::diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn bool_device<const D: usize>(tensor: &TchTensor<bool, D>) -> LibTorchDevice {
         tensor.tensor.device().into()
     }

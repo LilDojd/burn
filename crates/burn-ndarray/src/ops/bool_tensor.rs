@@ -53,6 +53,15 @@ impl<E: FloatNdArrayElement> BoolTensorOps<Self> for NdArray<E> {
         NdArrayOps::reshape(tensor, shape)
     }
 
+    fn bool_diagonal<const D1: usize, const D2: usize>(
+        tensor: NdArrayTensor<bool, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> NdArrayTensor<bool, D2> {
+        NdArrayOps::diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn bool_slice<const D1: usize, const D2: usize>(
         tensor: NdArrayTensor<bool, D1>,
         ranges: [Range<usize>; D2],
