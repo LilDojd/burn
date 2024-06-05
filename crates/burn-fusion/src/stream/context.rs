@@ -779,6 +779,15 @@ impl RelativeOps for BaseOperationDescription {
                     out: desc.out.to_relative(converter),
                 })
             }
+            BaseOperationDescription::Diagonal(desc) => {
+                BaseOperationDescription::Diagonal(DiagonalDescription {
+                    input: desc.input.to_relative(converter),
+                    out: desc.out.to_relative(converter),
+                    offset: desc.offset,
+                    dim1: desc.dim1,
+                    dim2: desc.dim2,
+                })
+            }
             BaseOperationDescription::SwapDims(desc) => {
                 BaseOperationDescription::SwapDims(SwapDimsDescription {
                     input: desc.input.to_relative(converter),

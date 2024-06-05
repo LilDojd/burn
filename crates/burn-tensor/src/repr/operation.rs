@@ -137,6 +137,12 @@ pub enum BaseOperationDescription {
     /// Int => [reshape](crate::ops::IntTensorOps::int_reshape).
     /// Bool => [reshape](crate::ops::BoolTensorOps::bool_reshape).
     Reshape(ReshapeDescription),
+    /// Operation corresponding to:
+    ///
+    /// Float => [diagonal](crate::ops::FloatTensorOps::float_diagonal).
+    /// Int => [diagonal](crate::ops::IntTensorOps::int_diagonal).
+    /// Bool => [diagonal](crate::ops::BoolTensorOps::bool_diagonal).
+    Diagonal(DiagonalDescription),
 
     /// Operation corresponding to:
     ///
@@ -507,6 +513,16 @@ pub struct RandomOperationDescription {
 pub struct ReshapeDescription {
     pub input: TensorDescription,
     pub out: TensorDescription,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Serialize, Deserialize)]
+#[allow(missing_docs)]
+pub struct DiagonalDescription {
+    pub input: TensorDescription,
+    pub out: TensorDescription,
+    pub offset: i64,
+    pub dim1: usize,
+    pub dim2: usize,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Serialize, Deserialize)]
@@ -1075,6 +1091,9 @@ impl BaseOperationDescription {
         match self {
             BaseOperationDescription::ToDevice(desc) => vec![desc],
             BaseOperationDescription::Reshape(desc) => {
+                vec![&desc.input, &desc.out]
+            }
+            BaseOperationDescription::Diagonal(desc) => {
                 vec![&desc.input, &desc.out]
             }
             BaseOperationDescription::SwapDims(desc) => {

@@ -646,6 +646,82 @@ impl<B: FusionBackend> FloatTensorOps<Self> for Fusion<B> {
         out
     }
 
+    fn float_diagonal<const D1: usize, const D2: usize>(
+        tensor: FloatTensor<Self, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> FloatTensor<Self, D2> {
+        #[derive(new)]
+        struct DiagonalOps<B: FusionBackend, const D1: usize, const D2: usize> {
+            desc: DiagonalDescription,
+            _b: PhantomData<B>,
+        }
+
+        impl<const D1: usize, const D2: usize, B: FusionBackend> Operation<B::FusionRuntime>
+            for DiagonalOps<B, D1, D2>
+        {
+            fn execute(self: Box<Self>, handles: &mut HandleContainer<B::Handle>) {
+                let input = handles.get_float_tensor::<B, D1>(&self.desc.input);
+                let output = B::float_diagonal::<D1, D2>(
+                    input,
+                    self.desc.offset,
+                    self.desc.dim1,
+                    self.desc.dim2,
+                );
+                handles.register_float_tensor::<B, D2>(&self.desc.out.id, output);
+            }
+        }
+
+        let stream = tensor.stream;
+        let diag_size: usize = {
+            if offset >= 0 {
+                i64::min(
+                    tensor.shape::<D1>().dims[dim1] as i64,
+                    tensor.shape::<D1>().dims[dim2] as i64 - offset,
+                )
+                .try_into()
+                .unwrap_or(0)
+            } else {
+                i64::min(
+                    tensor.shape::<D1>().dims[dim1] as i64 + offset,
+                    tensor.shape::<D1>().dims[dim2] as i64,
+                )
+                .try_into()
+                .unwrap_or(0)
+            }
+        };
+
+        let shape: Vec<usize> = tensor
+            .shape::<D1>()
+            .dims
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| *i != dim1 && *i != dim2)
+            .map(|(_, &s)| s)
+            .chain(core::iter::once(diag_size))
+            .collect::<Vec<_>>();
+
+        let out = tensor
+            .client
+            .tensor_uninitialized(shape, B::FloatElem::dtype());
+
+        let desc = DiagonalDescription {
+            input: tensor.into_description(),
+            offset,
+            dim1,
+            dim2,
+            out: out.to_description_out(),
+        };
+        out.client.register(
+            vec![stream],
+            OperationDescription::BaseFloat(BaseOperationDescription::Diagonal(desc.clone())),
+            DiagonalOps::<B, D1, D2>::new(desc),
+        );
+
+        out
+    }
+
     fn float_gather<const D: usize>(
         dim: usize,
         tensor: FloatTensor<Self, D>,
