@@ -315,7 +315,6 @@ where
             .map(|s| s.try_into().unwrap())
             .collect::<Vec<_>>();
 
-        println!("storage_offset: {storage_offset}, sizes: {sizes:?}, strides: {strides:?}");
         let array_view = unsafe {
             ArrayView::from_shape_ptr(sizes.strides(strides), arr.as_ptr().offset(storage_offset))
         };
