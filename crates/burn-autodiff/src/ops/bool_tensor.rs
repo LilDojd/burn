@@ -45,6 +45,15 @@ impl<B: Backend, C: CheckpointStrategy> BoolTensorOps<Self> for Autodiff<B, C> {
         B::bool_reshape(tensor, shape)
     }
 
+    fn bool_diagonal<const D1: usize, const D2: usize>(
+        tensor: BoolTensor<B, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> BoolTensor<B, D2> {
+        B::bool_diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn bool_slice<const D1: usize, const D2: usize>(
         tensor: BoolTensor<B, D1>,
         ranges: [std::ops::Range<usize>; D2],
