@@ -812,7 +812,8 @@ impl<B: Backend, C: CheckpointStrategy> FloatTensorOps<Self> for Autodiff<B, C> 
         impl<B: Backend, const D1: usize, const D2: usize> RetroForward for RetroDiagonal<B, D1, D2> {
             fn forward(&self, states: &mut BackwardStates, out_node: NodeID) {
                 let input = states.get_state::<B::FloatTensorPrimitive<D1>>(&self.input_id);
-                let out = B::float_diagonal(input, self.offset, self.dim1, self.dim2);
+                let out: <B as Backend>::FloatTensorPrimitive<D2> =
+                    B::float_diagonal(input, self.offset, self.dim1, self.dim2);
                 states.save(out_node, out)
             }
         }
