@@ -1,3 +1,4 @@
+use core::iter;
 use std::{borrow::Borrow, marker::PhantomData, sync::Arc};
 
 use burn_tensor::{backend::Backend, Data, Reader, Shape};
@@ -75,7 +76,7 @@ pub fn diagonal<E: CandleElement, const D1: usize, const D2: usize>(
         .enumerate()
         .filter(|&(i, _)| i != dim1 && i != dim2)
         .map(|(_, &s)| s)
-        .chain(std::iter::once(diag_size))
+        .chain(iter::once(diag_size))
         .collect::<Vec<_>>();
 
     // 2. Get diagonal indices as ranges

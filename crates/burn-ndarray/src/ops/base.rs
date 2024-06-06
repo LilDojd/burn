@@ -2,6 +2,7 @@ use alloc::vec::Vec;
 use burn_tensor::Data;
 use burn_tensor::ElementConversion;
 use core::fmt::Debug;
+use core::iter;
 use core::{marker::PhantomData, ops::Range};
 use ndarray::s;
 use ndarray::Array2;
@@ -109,7 +110,7 @@ where
             .enumerate()
             .filter(|&(i, _)| i != dim1 && i != dim2)
             .map(|(_, &s)| s)
-            .chain(std::iter::once(diag_size))
+            .chain(iter::once(diag_size))
             .collect::<Vec<_>>();
 
         let strides = arr
