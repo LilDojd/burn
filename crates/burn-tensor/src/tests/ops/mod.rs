@@ -16,6 +16,7 @@ mod clamp;
 mod close;
 mod cos;
 mod create_like;
+mod diagonal;
 mod div;
 mod erf;
 mod exp;
