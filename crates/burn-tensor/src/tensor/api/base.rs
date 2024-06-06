@@ -114,6 +114,51 @@ where
         Tensor::new(K::reshape::<D, D2>(self.primitive, shape))
     }
 
+    /// Returns the diagonal elements of the tensor with respect to `dim1` and `dim2` and
+    /// `offset`.
+    ///
+    /// If the tensor is 2D, returns the diagonal with the given `offset`, i.e., the collection of
+    /// elements of the form `tensor[i, i+offset]`. If `self` is a `Tensor<B, D, K>` with D > 2,
+    /// then he axes specified by axis1 and axis2 are used to determine the 2D sub-array whose
+    /// diagonal is returned. The shape of the resulting array can be determined by removing `dim1`
+    /// and `dim2` and appending an index to the right equal to the size of the resulting diagonals.
+    ///
+    /// A `0` `offset` is the main diagonal, a positive offset is above the main diagonal, and a negative
+    /// offset is below the main diagonal.
+    ///
+    /// # Arguments
+    /// - `offset`: The offset of the diagonal. if `offset` = 0, it is the main diagonal.
+    /// - `dim1`: The first dimension with respect to which to take diagonal.
+    /// - `dim2`: The second dimension with respect to which to take diagonal.
+    ///
+    /// # Panics
+    /// - If the tensor is a 1D tensor.
+    /// - If `dim1` or `dim2` is greater than the number of dimensions of the tensor.
+    /// - If `dim1` is equal to `dim2`.
+    ///
+    /// # Returns
+    ///
+    /// A new tensor containing the diagonal elements. The shape of the resulting tensor
+    /// can be determined by removing `dim1` and `dim2` and appending an index to the right
+    /// equal to the size of the resulting diagonals.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use burn_tensor::backend::Backend;
+    /// use burn_tensor::Tensor;
+    ///
+    /// fn example<B: Backend>() {
+    ///    let device = Default::default();
+    ///    let tensor = Tensor::<B, 1, Int>::arange(0..9, &device).reshape([3, -1]);
+    ///    // Given a 2D tensor with dimensions (3, 3), get its main diagonal  of shape (3,)
+    ///    // Note that we should specify the output tensor dimensions in type annotations or
+    ///    // as a const generic argument ::<1>
+    ///    let diagonal: Tensor<B, 1, Int> = tensor.diagonal::<1>(0, 0, 1);
+    ///    // The resulting tensor will have dimensions (2, 12).
+    ///    println!("{diagonal}");
+    ///    assert_eq!(diagonal.into_data(), Data::from([0, 4, 8]));
+    /// }
+    /// ```
     pub fn diagonal<const D2: usize>(
         self,
         offset: i64,
@@ -1236,7 +1281,8 @@ pub trait BasicOps<B: Backend>: TensorKind<B> {
         shape: Shape<D2>,
     ) -> Self::Primitive<D2>;
 
-    /// Returns the diagonal elements of the current tensor with respect to `dim1` and `dim2`.
+    /// Returns the diagonal elements of the tensor with respect to `dim1` and `dim2` and
+    /// offset.
     ///
     /// # Arguments
     /// - `offset`: The offset of the diagonal. if `offset` = 0, it is the main diagonal.
@@ -1250,7 +1296,18 @@ pub trait BasicOps<B: Backend>: TensorKind<B> {
     ///
     /// # Returns
     ///
-    /// A new tensor containing the diagonal elements.
+    /// A new tensor containing the diagonal elements. The shape of the resulting tensor
+    /// can be determined by removing `dim1` and `dim2` and appending an index to the right
+    /// equal to the size of the resulting diagonals.
+    ///
+    /// # Remarks
+    ///
+    /// This is a low-level function used internally by the library to call different backend functions
+    /// with static dispatch. It is not designed for direct usage by users, and not recommended to import
+    /// or use this function directly.
+    ///
+    /// For computing the diagonal of a tensor, users should prefer the [Tensor::diagonal](Tensor::diagonal) function,
+    /// which is more high-level and designed for public use.
     fn diagonal<const D1: usize, const D2: usize>(
         tensor: Self::Primitive<D1>,
         offset: i64,
