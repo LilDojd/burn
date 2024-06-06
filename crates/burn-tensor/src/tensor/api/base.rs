@@ -43,22 +43,6 @@ where
     }
 }
 
-macro_rules! impl_diagonal {
-    ($($D:expr),*) => {
-        $(
-            impl<B, K> Diagonal<B, { $D - 1 }, K> for Tensor<B, $D, K>
-            where
-                B: Backend,
-                K: BasicOps<B>,
-            {
-                fn diagonal(self, offset: i64, dim1: usize, dim2: usize) -> Tensor<B, { $D - 1 }, K> {
-                    Tensor::new(K::diagonal::<$D, { $D - 1 }>(self.primitive, offset, dim1, dim2))
-                }
-            }
-        )*
-    }
-}
-
 impl<B, const D: usize, K> Tensor<B, D, K>
 where
     B: Backend,

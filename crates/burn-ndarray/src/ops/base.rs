@@ -75,7 +75,6 @@ where
         dim2: usize,
     ) -> NdArrayTensor<E, D2> {
         let arr = tensor.array;
-        let num_dims = arr.ndim();
 
         let diag_size: usize = {
             if offset >= 0 {

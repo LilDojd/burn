@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-use crate::{alloc::borrow::ToOwned, tensor};
+use crate::alloc::borrow::ToOwned;
 
 use crate::{
     backend::Backend, check, check::TensorCheck, BasicOps, Bool, Distribution, Element,
