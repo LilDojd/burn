@@ -41,23 +41,25 @@ pub fn diagonal<E: CandleElement, const D1: usize, const D2: usize>(
     let tensor = tensor.tensor;
     let shape = tensor.dims();
 
-    fn get_dim_size(tensor: &candle_core::Tensor, dim: usize) -> i64 {
+    fn get_dim_size(tensor: &candle_core::Tensor, dim: usize) -> usize {
         tensor
             .dim(dim)
             .unwrap_or_else(|err| panic!("Requested dimension '{:?}' not found: {}", dim, err))
-            as i64
     }
 
     let dim1_size = get_dim_size(&tensor, dim1);
     let dim2_size = get_dim_size(&tensor, dim2);
 
-    let diag_size: usize = if offset >= 0 {
-        i64::min(dim1_size, dim2_size - offset)
-    } else {
-        i64::min(dim1_size + offset, dim2_size)
-    }
-    .try_into()
-    .unwrap_or(0);
+    let diag_size = match offset >= 0 {
+        true => usize::min(
+            dim1_size,
+            dim2_size.saturating_sub(offset.unsigned_abs() as usize),
+        ),
+        false => usize::min(
+            dim1_size.saturating_sub(offset.unsigned_abs() as usize),
+            dim2_size,
+        ),
+    };
 
     // 1. Permute dim1 and dim2 to the start
     let perm_indices = core::iter::once(dim1)
@@ -68,15 +70,15 @@ pub fn diagonal<E: CandleElement, const D1: usize, const D2: usize>(
     let tensor = tensor.permute(perm_indices.as_slice()).unwrap();
 
     // 1.5. Get shape of output tensor
-    let sizes = shape
+    let shape = shape
         .iter()
         .enumerate()
-        .filter(|(i, _)| *i != dim1 && *i != dim2)
+        .filter(|&(i, _)| i != dim1 && i != dim2)
         .map(|(_, &s)| s)
-        .chain(core::iter::once(diag_size))
+        .chain(std::iter::once(diag_size))
         .collect::<Vec<_>>();
 
-    // 2. Get diagonal indices
+    // 2. Get diagonal indices as ranges
     let i = (0..diag_size);
     let j = (offset.unsigned_abs() as usize..diag_size + offset.unsigned_abs() as usize);
 
@@ -102,7 +104,7 @@ pub fn diagonal<E: CandleElement, const D1: usize, const D2: usize>(
     // Concat and reshape resulting tensor vectors
     let new_tensor = candle_core::Tensor::cat(diags.as_slice(), 1)
         .unwrap()
-        .reshape(sizes)
+        .reshape(shape)
         .unwrap()
         .to_owned();
 

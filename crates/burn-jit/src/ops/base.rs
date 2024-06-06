@@ -151,17 +151,32 @@ pub(crate) fn diagonal<R: JitRuntime, E: JitElement, const D1: usize, const D2: 
     let tensor = kernel::into_contiguous(tensor);
     let dims = tensor.shape.dims;
 
-    // Get diagonal size
-    let diag_size: usize = {
-        if offset >= 0 {
-            i64::min(dims[dim1] as i64, dims[dim2] as i64 - offset)
-                .try_into()
-                .unwrap_or(0)
-        } else {
-            i64::min(dims[dim1] as i64 + offset, dims[dim2] as i64)
-                .try_into()
-                .unwrap_or(0)
-        }
+    // Get diagonal size and offset
+    let (diag_size, storage_offset) = {
+        let shape_dim1 = dims[dim1];
+        let shape_dim2 = dims[dim2];
+        let mut storage_offset = 0;
+
+        let diag_size = match offset >= 0 {
+            true => {
+                let min_dim = usize::min(
+                    shape_dim1,
+                    shape_dim2.saturating_sub(offset.unsigned_abs() as usize),
+                );
+                storage_offset += offset as usize * tensor.strides[dim2];
+                min_dim
+            }
+            false => {
+                let min_dim = usize::min(
+                    shape_dim1.saturating_sub(offset.unsigned_abs() as usize),
+                    shape_dim2,
+                );
+                storage_offset += offset.unsigned_abs() as usize * tensor.strides[dim1];
+                min_dim
+            }
+        };
+
+        (diag_size, storage_offset)
     };
 
     // Calculate shape of output
@@ -188,19 +203,10 @@ pub(crate) fn diagonal<R: JitRuntime, E: JitElement, const D1: usize, const D2: 
         .try_into()
         .unwrap();
 
-    // Get buffer with offset
-    let mut storage_offset = 0;
-    if diag_size > 0 {
-        if offset >= 0 {
-            storage_offset += offset as usize * tensor.strides[dim2];
-        } else {
-            storage_offset += offset.unsigned_abs() as usize * tensor.strides[dim1];
-        }
-    }
-
     // Copy all bytes
     let data = tensor.client.read(tensor.handle.binding()).read();
 
+    // Create a handle with offset
     let buffer = tensor
         .client
         .create(&data.as_slice()[storage_offset * core::mem::size_of::<E>()..]);

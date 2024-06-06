@@ -76,48 +76,54 @@ where
     ) -> NdArrayTensor<E, D2> {
         let arr = tensor.array;
 
-        let diag_size: usize = {
-            if offset >= 0 {
-                i64::min(arr.shape()[dim1] as i64, arr.shape()[dim2] as i64 - offset)
-                    .try_into()
-                    .unwrap_or(0)
-            } else {
-                i64::min(arr.shape()[dim1] as i64 + offset, arr.shape()[dim2] as i64)
-                    .try_into()
-                    .unwrap_or(0)
-            }
+        let (diag_size, storage_offset) = {
+            let shape_dim1 = arr.shape()[dim1];
+            let shape_dim2 = arr.shape()[dim2];
+            let mut storage_offset = 0;
+
+            let diag_size = match offset >= 0 {
+                true => {
+                    let min_dim = usize::min(
+                        shape_dim1,
+                        shape_dim2.saturating_sub(offset.unsigned_abs() as usize),
+                    );
+                    storage_offset += offset as isize * arr.strides()[dim2];
+                    min_dim
+                }
+                false => {
+                    let min_dim = usize::min(
+                        shape_dim1.saturating_sub(offset.unsigned_abs() as usize),
+                        shape_dim2,
+                    );
+                    storage_offset -= offset as isize * arr.strides()[dim1];
+                    min_dim
+                }
+            };
+
+            (diag_size, storage_offset)
         };
 
-        let mut storage_offset = 0;
-        if diag_size > 0 {
-            if offset >= 0 {
-                storage_offset += offset as isize * arr.strides()[dim2];
-            } else {
-                storage_offset -= offset as isize * arr.strides()[dim1];
-            }
-        }
-
-        let sizes = arr
+        let shape = arr
             .shape()
             .iter()
             .enumerate()
-            .filter(|(i, _)| *i != dim1 && *i != dim2)
+            .filter(|&(i, _)| i != dim1 && i != dim2)
             .map(|(_, &s)| s)
-            .chain(core::iter::once(diag_size))
+            .chain(std::iter::once(diag_size))
             .collect::<Vec<_>>();
 
         let strides = arr
             .strides()
             .iter()
             .enumerate()
-            .filter(|(i, _)| *i != dim1 && *i != dim2)
+            .filter(|&(i, _)| i != dim1 && i != dim2)
             .map(|(_, &s)| s)
             .chain(core::iter::once(arr.strides()[dim1] + arr.strides()[dim2]))
             .map(|s| s.try_into().unwrap())
             .collect::<Vec<_>>();
 
         let array_view = unsafe {
-            ArrayView::from_shape_ptr(sizes.strides(strides), arr.as_ptr().offset(storage_offset))
+            ArrayView::from_shape_ptr(shape.strides(strides), arr.as_ptr().offset(storage_offset))
         };
 
         NdArrayTensor {
