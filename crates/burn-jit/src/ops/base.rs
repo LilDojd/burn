@@ -189,6 +189,11 @@ pub(crate) fn diagonal<R: JitRuntime, E: JitElement, const D1: usize, const D2: 
         .collect::<Vec<_>>()
         .into();
 
+    // Short-circuit if diagonal size is 0
+    if diag_size == 0 {
+        return self::empty(shape, &tensor.device);
+    }
+
     // Calculate new strides
     let strides = tensor
         .strides
