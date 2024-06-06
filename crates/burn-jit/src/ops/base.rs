@@ -165,7 +165,7 @@ pub(crate) fn diagonal<R: JitRuntime, E: JitElement, const D1: usize, const D2: 
     };
 
     // Calculate shape of output
-    let shape = dims
+    let shape: Shape<D2> = dims
         .iter()
         .enumerate()
         .filter(|(i, _)| *i != dim1 && *i != dim2)
@@ -181,17 +181,36 @@ pub(crate) fn diagonal<R: JitRuntime, E: JitElement, const D1: usize, const D2: 
         .enumerate()
         .filter(|(i, _)| *i != dim1 && *i != dim2)
         .map(|(_, &s)| s)
-        .chain(core::iter::once(dims[dim1] + dims[dim2]))
+        .chain(core::iter::once(
+            tensor.strides[dim1] + tensor.strides[dim2],
+        ))
         .collect::<Vec<_>>()
         .try_into()
         .unwrap();
+
+    // Get buffer with offset
+    let mut storage_offset = 0;
+    if diag_size > 0 {
+        if offset >= 0 {
+            storage_offset += offset as usize * tensor.strides[dim2];
+        } else {
+            storage_offset += offset.unsigned_abs() as usize * tensor.strides[dim1];
+        }
+    }
+
+    // Copy all bytes
+    let data = tensor.client.read(tensor.handle.binding()).read();
+
+    let buffer = tensor
+        .client
+        .create(&data.as_slice()[storage_offset * core::mem::size_of::<E>()..]);
 
     JitTensor {
         client: tensor.client,
         device: tensor.device,
         shape,
         strides,
-        handle: tensor.handle,
+        handle: buffer,
         elem: PhantomData,
     }
 }

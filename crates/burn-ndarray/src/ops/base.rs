@@ -77,17 +77,6 @@ where
         let arr = tensor.array;
         let num_dims = arr.ndim();
 
-        let storage_offset = arr.strides().iter().zip(arr.shape()).enumerate().fold(
-            0,
-            |acc, (i, (&stride, &shape))| {
-                if i < arr.ndim() - num_dims {
-                    acc + stride * shape as isize
-                } else {
-                    acc
-                }
-            },
-        );
-
         let diag_size: usize = {
             if offset >= 0 {
                 i64::min(arr.shape()[dim1] as i64, arr.shape()[dim2] as i64 - offset)
@@ -100,7 +89,7 @@ where
             }
         };
 
-        let mut storage_offset = storage_offset;
+        let mut storage_offset = 0;
         if diag_size > 0 {
             if offset >= 0 {
                 storage_offset += offset as isize * arr.strides()[dim2];
