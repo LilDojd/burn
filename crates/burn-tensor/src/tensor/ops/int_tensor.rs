@@ -747,6 +747,25 @@ pub trait IntTensorOps<B: Backend> {
         Self::int_add_scalar(Self::int_zeros(shape, device), fill_value)
     }
 
+    /// Gets the diagonal elements of the tensor.
+    ///
+    /// # Arguments
+    ///
+    /// - `offset`: The offset of the diagonal. if `offset` = 0, it is the main diagonal.
+    /// - `dim1`: The first dimension with respect to which to take diagonal.
+    /// - `dim2`: The second dimension with respect to which to take diagonal.
+    ///
+    /// # Panics
+    ///
+    /// - If the tensor is a 1D tensor.
+    /// - If `dim1` or `dim2` is greater than the number of dimensions of the tensor.
+    /// - If `dim1` is equal to `dim2`.
+    ///
+    /// # Returns
+    ///
+    /// A new tensor containing the diagonal elements. The shape of the resulting tensor
+    /// can be determined by removing `dim1` and `dim2` and appending an index to the right
+    /// equal to the size of the resulting diagonals.
     fn int_diagonal<const D1: usize, const D2: usize>(
         tensor: IntTensor<B, D1>,
         offset: i64,

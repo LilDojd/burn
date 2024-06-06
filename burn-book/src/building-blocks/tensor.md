@@ -170,6 +170,7 @@ Those operations are available for all tensor kinds: `Int`, `Float`, and `Bool`.
 | `tensor.to_device(device)`            | `tensor.to(device)`                  |
 | `tensor.unsqueeze()`                  | `tensor.unsqueeze(0)`                |
 | `tensor.unsqueeze_dim(dim)`           | `tensor.unsqueeze(dim)`              |
+| `tensor.diagonal(offset, dim1, dim2)` | `tensor.diagonal(offset, dim1, dim2)` |
 
 ### Numeric Operations
 
@@ -295,16 +296,16 @@ Those operations are only available for `Int` tensors.
 
 Those operations are only available for `Bool` tensors.
 
-| Burn API                            | PyTorch Equivalent              |
-| ----------------------------------- | ------------------------------- |
-| `Tensor::diag_mask(shape, diagonal)`| N/A                             |
-| `Tensor::tril_mask(shape, diagonal)`| N/A                             |
-| `Tensor::triu_mask(shape, diagonal)`| N/A                             |
-| `tensor.argwhere()`                 | `tensor.argwhere()`             |
-| `tensor.float()`                    | `tensor.to(torch.float)`        |
-| `tensor.int()`                      | `tensor.to(torch.long)`         |
-| `tensor.nonzero()`                  | `tensor.nonzero(as_tuple=True)` |
-| `tensor.not()`                      | `tensor.logical_not()`          |
+| Burn API                             | PyTorch Equivalent              |
+| ------------------------------------ | ------------------------------- |
+| `Tensor::diag_mask(shape, diagonal)` | N/A                             |
+| `Tensor::tril_mask(shape, diagonal)` | N/A                             |
+| `Tensor::triu_mask(shape, diagonal)` | N/A                             |
+| `tensor.argwhere()`                  | `tensor.argwhere()`             |
+| `tensor.float()`                     | `tensor.to(torch.float)`        |
+| `tensor.int()`                       | `tensor.to(torch.long)`         |
+| `tensor.nonzero()`                   | `tensor.nonzero(as_tuple=True)` |
+| `tensor.not()`                       | `tensor.logical_not()`          |
 
 ## Activation Functions
 

@@ -143,9 +143,12 @@ where
     /// equal to the size of the resulting diagonals.
     ///
     /// # Examples
+    ///
+    /// Usage with 2D tensors:
+    ///
     /// ```rust
     /// use burn_tensor::backend::Backend;
-    /// use burn_tensor::Tensor;
+    /// use burn_tensor::{Tensor, Int, Data};
     ///
     /// fn example<B: Backend>() {
     ///    let device = Default::default();
@@ -154,9 +157,41 @@ where
     ///    // Note that we should specify the output tensor dimensions in type annotations or
     ///    // as a const generic argument ::<1>
     ///    let diagonal: Tensor<B, 1, Int> = tensor.diagonal::<1>(0, 0, 1);
-    ///    // The resulting tensor will have dimensions (2, 12).
+    ///    // The diagonal tensor will be 1D and will have elements (0, 4, 8)
     ///    println!("{diagonal}");
-    ///    assert_eq!(diagonal.into_data(), Data::from([0, 4, 8]));
+    /// }
+    /// ```
+    /// Example usage with >2D tensors and nonzero `offset`:
+    /// ```rust
+    /// use burn_tensor::backend::Backend;
+    /// use burn_tensor::{Tensor, Int};
+    ///
+    /// fn example<B: Backend>() {
+    ///     let device = Default::default();
+    ///     let tensor = Tensor::<B, 4, Int>::from_ints(
+    ///         [
+    ///             [
+    ///                 [[43, 10, 52], [65, 72, 74], [88, 36, 95]],
+    ///                 [[66, 80, 88], [83, 91, 5], [27, 43, 17]],
+    ///                 [[39, 91, 16], [80, 51, 81], [24, 77, 75]],
+    ///             ],
+    ///             [
+    ///                 [[36, 16, 36], [6, 88, 19], [38, 95, 3]],
+    ///                 [[36, 19, 26], [31, 45, 54], [5, 58, 98]],
+    ///                 [[5, 70, 46], [94, 84, 49], [91, 66, 41]],
+    ///             ],
+    ///             [
+    ///                 [[80, 91, 42], [78, 11, 90], [11, 45, 89]],
+    ///                 [[4, 50, 99], [18, 50, 69], [73, 53, 89]],
+    ///                 [[38, 84, 88], [25, 27, 1], [94, 83, 85]],
+    ///             ],
+    ///         ],
+    ///         &device,
+    ///     );
+    ///     // Offset: +1, dim1: 1, dim2: 2
+    ///     let diagonal = tensor.diagonal::<3>(1, 1, 2);
+    ///     // The resulting tensor will have dimensions (3, 3, 2).
+    ///     println!("{:?}", diagonal.shape());
     /// }
     /// ```
     pub fn diagonal<const D2: usize>(

@@ -211,12 +211,17 @@ pub(crate) fn diagonal<R: JitRuntime, E: JitElement, const D1: usize, const D2: 
         .client
         .create(&data.as_slice()[storage_offset * core::mem::size_of::<E>()..]);
 
-    JitTensor {
+    // The actual data in this tensor is a slice of the original tensor's data
+    // To truly return the diagonal, we need to remove non-diagonal elements.
+    // This can be done just by applying a unary op or calling `.copy()`
+    let new_tensor = JitTensor {
         client: tensor.client,
         device: tensor.device,
         shape,
         strides,
         handle: buffer,
         elem: PhantomData,
-    }
+    };
+
+    new_tensor.copy()
 }
