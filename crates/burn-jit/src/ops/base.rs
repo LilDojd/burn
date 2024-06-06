@@ -141,3 +141,57 @@ pub(crate) fn reshape<R: JitRuntime, E: JitElement, const D1: usize, const D2: u
 
     JitTensor::new(tensor.client, tensor.device, shape, tensor.handle)
 }
+
+pub(crate) fn diagonal<R: JitRuntime, E: JitElement, const D1: usize, const D2: usize>(
+    tensor: JitTensor<R, E, D1>,
+    offset: i64,
+    dim1: usize,
+    dim2: usize,
+) -> JitTensor<R, E, D2> {
+    let tensor = kernel::into_contiguous(tensor);
+    let dims = tensor.shape.dims;
+
+    // Get diagonal size
+    let diag_size: usize = {
+        if offset >= 0 {
+            i64::min(dims[dim1] as i64, dims[dim2] as i64 - offset)
+                .try_into()
+                .unwrap_or(0)
+        } else {
+            i64::min(dims[dim1] as i64 + offset, dims[dim2] as i64)
+                .try_into()
+                .unwrap_or(0)
+        }
+    };
+
+    // Calculate shape of output
+    let shape = dims
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| *i != dim1 && *i != dim2)
+        .map(|(_, &s)| s)
+        .chain(core::iter::once(diag_size))
+        .collect::<Vec<_>>()
+        .into();
+
+    // Calculate new strides
+    let strides = tensor
+        .strides
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| *i != dim1 && *i != dim2)
+        .map(|(_, &s)| s)
+        .chain(core::iter::once(dims[dim1] + dims[dim2]))
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap();
+
+    JitTensor {
+        client: tensor.client,
+        device: tensor.device,
+        shape,
+        strides,
+        handle: tensor.handle,
+        elem: PhantomData,
+    }
+}

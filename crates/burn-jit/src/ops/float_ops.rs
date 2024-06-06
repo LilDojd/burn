@@ -167,6 +167,15 @@ where
         super::reshape(tensor, shape)
     }
 
+    fn float_diagonal<const D1: usize, const D2: usize>(
+        tensor: FloatTensor<Self, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> FloatTensor<Self, D2> {
+        super::diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn float_gather<const D: usize>(
         dim: usize,
         tensor: FloatTensor<Self, D>,

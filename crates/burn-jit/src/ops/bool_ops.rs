@@ -63,6 +63,15 @@ where
         super::reshape(tensor, shape)
     }
 
+    fn bool_diagonal<const D1: usize, const D2: usize>(
+        tensor: BoolTensor<Self, D1>,
+        offset: i64,
+        dim1: usize,
+        dim2: usize,
+    ) -> BoolTensor<Self, D2> {
+        super::diagonal(tensor, offset, dim1, dim2)
+    }
+
     fn bool_slice<const D1: usize, const D2: usize>(
         tensor: BoolTensor<Self, D1>,
         ranges: [Range<usize>; D2],
