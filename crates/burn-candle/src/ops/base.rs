@@ -85,8 +85,8 @@ pub fn diagonal<E: CandleElement, const D1: usize, const D2: usize>(
     for (i, j) in i.into_iter().zip(j.into_iter()) {
         // This is why we permuted
         let index = match offset >= 0 {
-            true => (j, i),
-            false => (i, j),
+            true => (i, j),
+            false => (j, i),
         };
         let diag = tensor
             .i(index)
@@ -99,6 +99,7 @@ pub fn diagonal<E: CandleElement, const D1: usize, const D2: usize>(
         diags.push(diag);
     }
 
+    // Concat and reshape resulting tensor vectors
     let new_tensor = candle_core::Tensor::cat(diags.as_slice(), 1)
         .unwrap()
         .reshape(sizes)
